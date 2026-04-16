@@ -8,7 +8,11 @@ from http import HTTPStatus
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
+from core.schemas import UseDB, UserPublic, UserSchema
+
 app = FastAPI()
+
+database = []
 
 
 @app.get('/', status_code=HTTPStatus.OK)
@@ -30,3 +34,11 @@ def exercicio_aula_02():
       </body>
     </html>
     """
+
+
+@app.post('/users/', status_code=HTTPStatus.CREATED, response_model=UserPublic)
+def create_user(user: UserSchema):
+    """Create a new user."""
+    use_with_id = UseDB(**user.model_dump(), id=len(database) + 1)
+    database.append(use_with_id)
+    return use_with_id

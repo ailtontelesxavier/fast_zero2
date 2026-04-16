@@ -20,3 +20,21 @@ def test_html_deve_retornar_pagina_html():
     response = client.get('/exercicio-html')
     assert response.status_code == HTTPStatus.OK
     assert '<h1> Olá Mundo </h1>' in response.text
+
+
+def test_create_user():
+    """Teste para verificar se o endpoint de criação de usuário funciona
+    corretamente."""
+    client = TestClient(app)
+
+    response = client.post('/users/', json={
+        'username': 'alice',
+        'email': 'alice@example.com',
+        'password': 'secret',
+    })
+    assert response.status_code == HTTPStatus.CREATED
+    assert response.json() == {
+        'username': 'alice',
+        'email': 'alice@example.com',
+        'id': 1,
+    }
