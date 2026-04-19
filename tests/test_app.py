@@ -54,6 +54,26 @@ def test_red_users(client):
     }
 
 
+def test_get_user_should_return_not_found(client):
+    """Teste para verificar se o endpoint de leitura de usuário por ID
+    retorna o error correto quando o usuário não existe."""
+    response = client.get('/users/999')
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
+
+
+def test_get_user(client):
+    """Teste para verificar se o endpoint de leitura de usuário por ID
+    retorna o usuário correto."""
+    response = client.get('/users/1')
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'username': 'alice',
+        'email': 'alice@example.com',
+        'id': 1,
+    }
+
+
 def test_update_user(client):
     """Teste para verificar se o endpoint de atualização de usuário funciona
     corretamente."""
@@ -73,9 +93,32 @@ def test_update_user(client):
     }
 
 
+def test_update_user_should_return_not_found(client):
+    """Teste para verificar se o endpoint de atualização de usuário
+    retorna o error correto quando o usuário não existe."""
+    response = client.put(
+        '/users/999',
+        json={
+            'username': 'charlie',
+            'email': 'charlie@example.com',
+            'password': 'anotherpassword',
+        },
+    )
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
+
+
 def test_delete_user(client):
     """Teste para verificar se o endpoint de exclusão de usuário funciona
     corretamente."""
     response = client.delete('/users/1')
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'User deleted'}
+
+
+def test_delete_user_should_return_not_found(client):
+    """Teste para verificar se o endpoint de exclusão de usuário
+    retorna o error correto quando o usuário não existe."""
+    response = client.delete('/users/999')
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}

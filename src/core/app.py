@@ -50,6 +50,16 @@ def read_users():
     return {'users': database}
 
 
+@app.get('/users/{user_id}', response_model=UserPublic)
+def read_user(user_id: int):
+    """Endpoint to return a user by ID."""
+    if user_id > len(database) or user_id < 0:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail='User not found'
+        )
+    return database[user_id - 1]
+
+
 @app.put('/users/{user_id}', response_model=UserPublic)
 def update_user(user_id: int, user: UserSchema):
     """Endpoint to update an existing user."""
