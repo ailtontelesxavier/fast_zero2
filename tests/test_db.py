@@ -10,15 +10,19 @@ def test_create_user(session, mock_db_time):
     usuário funciona corretamente."""
     with mock_db_time(model=User) as time:
         new_user = User(
-            username='bob', password='mynewpassword', email='bob@example.com'
+            username='bob',
+            password='mynewpassword',
+            email='bob@example.com',
         )
-    session.add(new_user)
-    session.commit()
+        session.add(new_user)
+        session.commit()
 
-    user = session.scalar(select(User).where(User.username == 'bob'))
-    assert asdict(user) == {
-        'id': 1,
-        'username': 'bob',
-        'email': 'bob@example.com',
-        'created_at': time,
-    }
+        user = session.scalar(select(User).where(User.username == 'bob'))
+        assert asdict(user) == {
+            'id': 1,
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'mynewpassword',
+            'created_at': time,
+            'updated_at': time,
+        }
