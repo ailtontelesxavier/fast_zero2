@@ -12,12 +12,12 @@ import pytest_asyncio
 from fastapi.testclient import TestClient
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from testcontainers.postgres import PostgresContainer
 
 from core.app import app
 from core.database import get_session
 from core.models import User, table_registry
 from core.security import get_password_hash
-from core.settings import Settings
 
 
 class UserFactory(factory.Factory):
@@ -31,22 +31,24 @@ class UserFactory(factory.Factory):
 
 @pytest_asyncio.fixture
 async def engine():
-    async_engine = create_async_engine(Settings().ASYNC_DATABASE_URL)
-    try:
-        yield async_engine
-    finally:
-        await async_engine.dispose()
-
-
-@pytest_asyncio.fixture
-async def session(engine, db_schema):
-    async with AsyncSession(engine, expire_on_commit=False) as session:
-        yield session
-        await session.rollback()
+    with PostgresContainer('postgres:16', driver='psycopg') as postgres:
+        engine = create_async_engine(
+            postgres.get_connection_url().replace(
+                'postgresql+psycopg://',
+                'postgresql+psycopg_async://',
+                1,
+            )
+        )
+        try:
+            yield engine
+        finally:
+            await engine.dispose()
 
 
 @pytest_asyncio.fixture
 async def db_schema(engine):
+    """Fixture para criar e destruir o esquema do banco
+    de dados para os testes."""
     async with engine.begin() as conn:
         await conn.run_sync(table_registry.metadata.create_all)
 
@@ -54,6 +56,13 @@ async def db_schema(engine):
 
     async with engine.begin() as conn:
         await conn.run_sync(table_registry.metadata.drop_all)
+
+
+@pytest_asyncio.fixture
+async def session(engine, db_schema):
+    async with AsyncSession(engine, expire_on_commit=False) as session:
+        yield session
+        await session.rollback()
 
 
 @pytest.fixture
