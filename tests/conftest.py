@@ -15,9 +15,9 @@ from sqlalchemy.orm import Session
 from testcontainers.postgres import PostgresContainer
 
 from core.database import get_session
+from core.app import app
+from core.models import User, table_registry
 from core.security import get_password_hash
-from src.core.app import app
-from src.core.models import User, table_registry
 
 
 class UserFactory(factory.Factory):
