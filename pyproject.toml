@@ -69,3 +69,6 @@ post_test = 'coverage html'
 [tool.coverage.run]
 core = "ctrace"
 concurrency = ["thread", "greenlet"]
+
+[tool.typos.default]
+extend-ignore-identifiers-re = ["selectin"]
