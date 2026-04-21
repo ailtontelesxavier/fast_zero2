@@ -12,6 +12,7 @@ from sqlalchemy import StaticPool, create_engine, event
 from sqlalchemy.orm import Session
 
 from core.database import get_session
+from core.security import get_password_hash
 from src.core.app import app
 from src.core.models import User, table_registry
 
@@ -75,11 +76,27 @@ def mock_db_time():
 @pytest.fixture
 def user(session):
     """Fixture para criar um usuário de teste."""
+    password = 'testtest'
     user = User(
-        username='Teste', email='teste@example.com', password='testtest'
+        username='Teste',
+        email='teste@example.com',
+        password=get_password_hash(password),
     )
     session.add(user)
     session.commit()
     session.refresh(user)
 
+    user.clean_password = password
+
     return user
+
+
+@pytest.fixture
+def token(client, user):
+    """Fixture para obter um token de
+    acesso JWT para o usuário de teste."""
+    response = client.post(
+        '/token',
+        data={'username': user.email, 'password': user.clean_password},
+    )
+    return response.json()['access_token']

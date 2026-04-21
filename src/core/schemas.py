@@ -34,3 +34,10 @@ class UserList(BaseModel):
     """Schema for a list of users"""
 
     users: list[UserPublic]
+
+
+class Token(BaseModel):
+    """Token schema for authentication responses"""
+
+    access_token: str
+    token_type: str
