@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,10 +10,38 @@ class Settings(BaseSettings):
         env_file_encoding='utf-8',
     )
 
-    DATABASE_URL: str
-    SECRET_KEY: str
-    ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    DATABASE_URL: str = 'sqlite+aiosqlite:///database.db'
+    SECRET_KEY: str = 'your-secret-key'
+    ALGORITHM: str = 'HS256'
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    @field_validator('DATABASE_URL', mode='before')
+    @classmethod
+    def default_database_url(cls, value):
+        if isinstance(value, str) and not value:
+            return 'sqlite+aiosqlite:///database.db'
+        return value
+
+    @field_validator('SECRET_KEY', mode='before')
+    @classmethod
+    def default_secret_key(cls, value):
+        if isinstance(value, str) and not value:
+            return 'your-secret-key'
+        return value
+
+    @field_validator('ALGORITHM', mode='before')
+    @classmethod
+    def default_algorithm(cls, value):
+        if isinstance(value, str) and not value:
+            return 'HS256'
+        return value
+
+    @field_validator('ACCESS_TOKEN_EXPIRE_MINUTES', mode='before')
+    @classmethod
+    def default_access_token_expire_minutes(cls, value):
+        if isinstance(value, str) and not value:
+            return 30
+        return value
 
     @property
     def ASYNC_DATABASE_URL(self) -> str:

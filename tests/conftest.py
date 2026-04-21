@@ -10,7 +10,7 @@ import factory
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
-from sqlalchemy import event
+from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from testcontainers.postgres import PostgresContainer
 
@@ -29,7 +29,7 @@ class UserFactory(factory.Factory):
     password = factory.LazyAttribute(lambda obj: f'{obj.username}@example.com')
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope='session', loop_scope='session')
 async def engine():
     with PostgresContainer('postgres:16', driver='psycopg') as postgres:
         engine = create_async_engine(
@@ -45,7 +45,7 @@ async def engine():
             await engine.dispose()
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope='session', loop_scope='session')
 async def db_schema(engine):
     """Fixture para criar e destruir o esquema do banco
     de dados para os testes."""
@@ -59,14 +59,28 @@ async def db_schema(engine):
 
 
 @pytest_asyncio.fixture
-async def session(engine, db_schema):
+async def reset_db(engine, db_schema):
+    table_names = ', '.join(
+        table.name for table in reversed(table_registry.metadata.sorted_tables)
+    )
+    if table_names:
+        async with engine.begin() as conn:
+            await conn.execute(
+                text(f'TRUNCATE {table_names} RESTART IDENTITY CASCADE')
+            )
+
+    yield
+
+
+@pytest_asyncio.fixture
+async def session(engine, reset_db):
     async with AsyncSession(engine, expire_on_commit=False) as session:
         yield session
         await session.rollback()
 
 
 @pytest.fixture
-def client(engine, db_schema):
+def client(engine, reset_db):
     async def get_session_override():
         async with AsyncSession(engine, expire_on_commit=False) as session:
             yield session
