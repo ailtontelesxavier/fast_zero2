@@ -7,9 +7,10 @@ from contextlib import contextmanager
 from datetime import datetime
 
 import pytest
+import pytest_asyncio
 from fastapi.testclient import TestClient
-from sqlalchemy import StaticPool, create_engine, event
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine, event
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from core.database import get_session
 from core.security import get_password_hash
@@ -18,34 +19,49 @@ from src.core.models import User, table_registry
 
 
 @pytest.fixture
-def client(session):
-    """Fixture para criar um client de teste do FastAPI."""
-
-    def get_session_override():
-        return session
-
-    with TestClient(app) as client_app:
-        app.dependency_overrides[get_session] = get_session_override
-        yield client_app
-
-    app.dependency_overrides.clear()
+def database_url(tmp_path):
+    """Fixture para criar uma URL de banco de dados para os testes."""
+    return f'sqlite:///{tmp_path / "test.db"}'
 
 
 @pytest.fixture
-def session():
-    """Fixture para criar uma sessão de banco de dados para os testes."""
-    engine = create_engine(
-        'sqlite:///:memory:',
-        connect_args={'check_same_thread': False},
-        poolclass=StaticPool,
+def client(database_url):
+    """Fixture para criar um client de teste do FastAPI."""
+    sync_engine = create_engine(database_url)
+    table_registry.metadata.create_all(sync_engine)
+    async_engine = create_async_engine(
+        database_url.replace('sqlite:///', 'sqlite+aiosqlite:///', 1)
     )
-    table_registry.metadata.create_all(engine)
 
-    with Session(engine) as session:
+    async def get_session_override():
+        async with AsyncSession(
+            async_engine, expire_on_commit=False
+        ) as session:
+            yield session
+
+    client_app = TestClient(app)
+    app.dependency_overrides[get_session] = get_session_override
+    yield client_app
+
+    app.dependency_overrides.clear()
+    client_app.close()
+    sync_engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def session(database_url):
+    """Fixture para criar uma sessão de banco de dados para os testes."""
+    sync_engine = create_engine(database_url)
+    table_registry.metadata.create_all(sync_engine)
+    async_engine = create_async_engine(
+        database_url.replace('sqlite:///', 'sqlite+aiosqlite:///', 1)
+    )
+
+    async with AsyncSession(async_engine, expire_on_commit=False) as session:
         yield session
 
-    table_registry.metadata.drop_all(engine)
-    engine.dispose()
+    await async_engine.dispose()
+    sync_engine.dispose()
 
 
 @contextmanager
@@ -73,8 +89,8 @@ def mock_db_time():
     return _mock_db_time
 
 
-@pytest.fixture
-def user(session):
+@pytest_asyncio.fixture
+async def user(session):
     """Fixture para criar um usuário de teste."""
     password = 'testtest'
     user = User(
@@ -83,16 +99,16 @@ def user(session):
         password=get_password_hash(password),
     )
     session.add(user)
-    session.commit()
-    session.refresh(user)
+    await session.commit()
+    await session.refresh(user)
 
     user.clean_password = password
 
     return user
 
 
-@pytest.fixture
-def token(client, user):
+@pytest_asyncio.fixture
+async def token(client, user):
     """Fixture para obter um token de
     acesso JWT para o usuário de teste."""
     response = client.post(

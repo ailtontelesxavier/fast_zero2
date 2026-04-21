@@ -2,16 +2,15 @@
 Database module for Fast Zero application.
 """
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from core.settings import Settings
 
-engine = create_engine(Settings().DATABASE_URL, echo=False)
+engine = create_async_engine(Settings().ASYNC_DATABASE_URL)
 
 
 # pragma: no cover
-def get_session():
+async def get_session():
     """Returns a new database session."""
-    with Session(engine) as session:
+    async with AsyncSession(engine, expire_on_commit=False) as session:
         yield session
