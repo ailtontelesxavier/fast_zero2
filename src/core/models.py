@@ -3,6 +3,7 @@
 from datetime import datetime
 from enum import Enum
 
+from sqlalchemy import Enum as SqlEnum
 from sqlalchemy import ForeignKey, func
 from sqlalchemy.orm import (
     Mapped,
@@ -54,7 +55,9 @@ class Todo:
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
     title: Mapped[str]
     description: Mapped[str]
-    state: Mapped[TodoState]
+    state: Mapped[TodoState] = mapped_column(
+        SqlEnum(TodoState, name='todostate', validate_strings=True)
+    )
 
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
 
