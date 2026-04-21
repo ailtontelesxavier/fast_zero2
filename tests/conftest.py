@@ -14,8 +14,8 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 from testcontainers.postgres import PostgresContainer
 
-from core.database import get_session
 from core.app import app
+from core.database import get_session
 from core.models import User, table_registry
 from core.security import get_password_hash
 
