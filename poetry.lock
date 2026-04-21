@@ -1616,14 +1616,14 @@ typing-extensions = ">=4.14.1"
 
 [[package]]
 name = "pydantic-extra-types"
-version = "2.11.2"
+version = "2.11.1"
 description = "Extra Pydantic types."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "pydantic_extra_types-2.11.2-py3-none-any.whl", hash = "sha256:683b8943252543e49760f89733b1519bc62f31d1a287ebbdc5a7b7959fb4acfd"},
-    {file = "pydantic_extra_types-2.11.2.tar.gz", hash = "sha256:3a2b83b61fe920925688e7838b59caa90a45637d1dbba2b1364b8d1f7ff72a0a"},
+    {file = "pydantic_extra_types-2.11.1-py3-none-any.whl", hash = "sha256:1722ea2bddae5628ace25f2aa685b69978ef533123e5638cfbddb999e0100ec1"},
+    {file = "pydantic_extra_types-2.11.1.tar.gz", hash = "sha256:46792d2307383859e923d8fcefa82108b1a141f8a9c0198982b3832ab5ef1049"},
 ]
 
 [package.dependencies]
@@ -2991,4 +2991,4 @@ dev = ["pytest", "setuptools"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12, <4.0"
-content-hash = "44288d3ffa81903d6d3b480c1b52d835018a1855e7cf5c6080b29862078491ee"
+content-hash = "22fb4ad78666dbdd7ecd8e7b936b630da2472edae9f901b57530166320855b9f"
