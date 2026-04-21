@@ -15,13 +15,16 @@ from sqlalchemy.orm import Session
 
 from core.database import get_session
 from core.models import User
+from core.settings import Settings
 
-SECRET_KEY = 'your_secret_key_here'
-ALGORITHM = 'HS256'
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+settings = Settings()
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 pwd_context = PasswordHash.recommended()
 
-oauth2_schema = OAuth2PasswordBearer(tokenUrl='token')
+oauth2_schema = OAuth2PasswordBearer(tokenUrl='auth/token')
+settings = Settings()
 
 
 def create_access_token(data: dict):

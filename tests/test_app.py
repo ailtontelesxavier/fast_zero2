@@ -103,10 +103,9 @@ def test_update_user_should_return_not_found(client, token):
     assert response.json() == {'detail': 'User not found'}
 
 
-def test_update_integrity_error(client, user, token):
+def test_update_integrity_error(client, token):
     client.post(
         '/users/',
-        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'alice',
             'email': 'alice@example.com',
@@ -126,7 +125,7 @@ def test_update_integrity_error(client, user, token):
     assert response.json() == {'detail': 'Username or Email already exists'}
 
 
-def test_delete_user(client, user, token):
+def test_delete_user(client, token):
     """Teste para verificar se o endpoint de exclusão de usuário funciona
     corretamente."""
     response = client.delete(
@@ -166,7 +165,7 @@ def test_get_login(client, user):
     """Teste para verificar se o endpoint de login retorna um token de acesso
     válido."""
     response = client.post(
-        '/token',
+        '/auth/token',
         data={'username': user.email, 'password': user.clean_password},
     )
     token = response.json()
@@ -199,3 +198,15 @@ def test_get_current_user_does_not_exists(client):
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
     assert response.json() == {'detail': 'Could not validate credentials'}
+
+
+def test_get_token(client, user):
+    response = client.post(
+        '/auth/token',
+        data={'username': user.email, 'password': user.clean_password},
+    )
+    token = response.json()
+
+    assert response.status_code == HTTPStatus.OK
+    assert 'access_token' in token
+    assert 'token_type' in token

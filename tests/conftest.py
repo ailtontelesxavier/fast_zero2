@@ -96,7 +96,8 @@ def token(client, user):
     """Fixture para obter um token de
     acesso JWT para o usuário de teste."""
     response = client.post(
-        '/token',
+        '/auth/token',
         data={'username': user.email, 'password': user.clean_password},
     )
+    print(response.json())
     return response.json()['access_token']
