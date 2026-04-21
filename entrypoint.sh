@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+# Executa as migrações do banco de dados
+poetry run alembic upgrade head
+
+# Inicia a aplicação
+exec poetry run uvicorn --host 0.0.0.0 --port 8008 core.app:app

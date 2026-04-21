@@ -11,7 +11,8 @@ import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import Session
+from testcontainers.postgres import PostgresContainer
 
 from core.database import get_session
 from core.security import get_password_hash
@@ -28,50 +29,36 @@ class UserFactory(factory.Factory):
     password = factory.LazyAttribute(lambda obj: f'{obj.username}@example.com')
 
 
-@pytest.fixture
-def database_url(tmp_path):
-    """Fixture para criar uma URL de banco de dados para os testes."""
-    return f'sqlite:///{tmp_path / "test.db"}'
+@pytest.fixture(scope='session')
+def engine():
+    with PostgresContainer('postgres:16', driver='psycopg') as postgres:
+        _engine = create_engine(postgres.get_connection_url())
+
+        with _engine.begin():
+            yield _engine
 
 
 @pytest.fixture
-def client(database_url):
-    """Fixture para criar um client de teste do FastAPI."""
-    sync_engine = create_engine(database_url)
-    table_registry.metadata.create_all(sync_engine)
-    async_engine = create_async_engine(
-        database_url.replace('sqlite:///', 'sqlite+aiosqlite:///', 1)
-    )
+def session(engine):
+    table_registry.metadata.create_all(engine)
 
-    async def get_session_override():
-        async with AsyncSession(
-            async_engine, expire_on_commit=False
-        ) as session:
-            yield session
+    with Session(engine) as session:
+        yield session
+        session.rollback()
 
-    client_app = TestClient(app)
-    app.dependency_overrides[get_session] = get_session_override
-    yield client_app
+    table_registry.metadata.drop_all(engine)
+
+
+@pytest.fixture
+def client(session):
+    def get_session_override():
+        return session
+
+    with TestClient(app) as client:
+        app.dependency_overrides[get_session] = get_session_override
+        yield client
 
     app.dependency_overrides.clear()
-    client_app.close()
-    sync_engine.dispose()
-
-
-@pytest_asyncio.fixture
-async def session(database_url):
-    """Fixture para criar uma sessão de banco de dados para os testes."""
-    sync_engine = create_engine(database_url)
-    table_registry.metadata.create_all(sync_engine)
-    async_engine = create_async_engine(
-        database_url.replace('sqlite:///', 'sqlite+aiosqlite:///', 1)
-    )
-
-    async with AsyncSession(async_engine, expire_on_commit=False) as session:
-        yield session
-
-    await async_engine.dispose()
-    sync_engine.dispose()
 
 
 @contextmanager
