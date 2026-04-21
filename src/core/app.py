@@ -17,7 +17,7 @@ app.include_router(auth.router)
 
 
 @app.get('/', status_code=HTTPStatus.OK)
-def read_root():
+async def read_root():
     """Endpoint to return a simple message."""
     return {'message': 'Hello World'}
 
